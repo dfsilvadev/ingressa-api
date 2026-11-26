@@ -1,0 +1,66 @@
+{
+  "name": "ingressa-api",
+  "version": "1.0.0",
+  "description": "Event ticketing and live check-in platform with high-concurrency reservation handling and real-time gate validation.",
+  "keywords": [
+    "ticketing",
+    "event-management",
+    "check-in",
+    "ddd",
+    "domain-driven-design",
+    "concurrency",
+    "idempotency",
+    "webhooks",
+    "websockets",
+    "aws",
+    "cognito",
+    "s3",
+    "sqs"
+  ],
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start:dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsup",
+    "start": "node --enable-source-maps dist/server.js",
+    "type:check": "prisma generate && tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "prepare": "husky"
+  },
+  "author": "Daniel Silva",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "dotenv": "^18.0.10",
+    "fastify": "^5.12.8",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "24",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/ui": "^4.1.12",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.2",
+    "prettier": "^3.10.1",
+    "prisma": "^7.10.1",
+    "supertest": "^7.3.2",
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.74.0",
+    "vitest": "^4.1.12"
+  }
+}
