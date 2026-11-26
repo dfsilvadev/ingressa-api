@@ -26,7 +26,7 @@
     "start:dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsup",
     "start": "node --enable-source-maps dist/server.js",
-    "type:check": "prisma generate && tsc --noEmit",
+    "type:check": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
