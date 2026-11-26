@@ -23,10 +23,10 @@ API de venda de ingressos e check-in em tempo real para eventos. O foco é lidar
 
 | Camada                 | Escolha                                                                  |
 | ---------------------- | ------------------------------------------------------------------------ |
-| Runtime                | Node.js 24+ (ESM)                                                        |
+| Runtime                | Node.js 20+ (ESM)                                                        |
 | Linguagem              | TypeScript 5.9 (modo `strict` e flags extras)                            |
 | HTTP                   | Fastify 5                                                                |
-| Banco                  | PostgreSQL + Prisma 7 com `@prisma/adapter-pg`                           |
+| Banco                  | PostgreSQL + Prisma 7 com `@prisma/adapter-pg` (planejado)               |
 | Validação              | Zod 4                                                                    |
 | Build / dev            | tsup (esbuild) / tsx                                                     |
 | Testes                 | Vitest + Supertest                                                       |
@@ -39,9 +39,8 @@ API de venda de ingressos e check-in em tempo real para eventos. O foco é lidar
 
 ### Pré-requisitos
 
-- **Node.js 24 ou superior.** O `package.json` declara `engines.node >= 24` e o build tem como alvo `node24`.
+- **Node.js 20 ou superior.** O `package.json` declara `engines.node >= 20`, o [.nvmrc](.nvmrc) fixa `v20.19.4` e o build tem como alvo `node20`.
 - **pnpm** (de preferência via Corepack: `corepack enable`).
-- **PostgreSQL** acessível, local ou em container.
 
 ### Passo a passo
 
@@ -60,13 +59,13 @@ Para verificar se está tudo de pé:
 
 ```bash
 curl http://localhost:3333/health
-# {"status":"ok","uptime":1.23,"timestamp":"2026-11-26T12:00:00.000Z"}
+# {"status":"ok","version":"1.0.0","uptime":1.23,"timestamp":"2026-11-26T12:00:00.000Z"}
 ```
 
 ### Build de produção
 
 ```bash
-pnpm build   # prisma generate + bundle em dist/
+pnpm build   # bundle em dist/
 pnpm start   # node --enable-source-maps dist/server.js
 ```
 
@@ -76,21 +75,20 @@ pnpm start   # node --enable-source-maps dist/server.js
 
 ## Variáveis de ambiente
 
-Todas são validadas na inicialização por [src/utils/config/env/index.ts](src/utils/config/env/index.ts). Se alguma for inválida, a aplicação **não sobe** e mostra uma mensagem legível com o problema.
+Todas são validadas na inicialização por [src/utils/config/env/index.ts](src/utils/config/env/index.ts). Se alguma for inválida, a aplicação **não sobe**: mostra uma mensagem legível, sem stack trace, e encerra com exit code 1.
 
-| Variável       | Obrigatória | Padrão                                                              | Descrição                                                                   |
-| -------------- | ----------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `DATABASE_URL` | sim         | –                                                                   | Connection string, que precisa começar com `postgres://` ou `postgresql://` |
-| `PORT`         | não         | `3000`                                                              | Porta HTTP (o `.env.example` usa `3333`)                                    |
-| `HOST`         | não         | `localhost`                                                         | Interface de bind. Use `0.0.0.0` dentro de container                        |
-| `NODE_ENV`     | não         | `production`                                                        | `development`, `test` ou `production`                                       |
-| `LOG_LEVEL`    | não         | `info`                                                              | `debug`, `info`, `warn` ou `error`                                          |
-| `CORS_ORIGINS` | não         | `http://localhost:3000,http://localhost:3002,http://localhost:5173` | Lista separada por vírgula. Valor vazio usa o padrão                        |
+| Variável       | Obrigatória | Padrão                                                              | Descrição                                            |
+| -------------- | ----------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
+| `PORT`         | não         | `3333`                                                              | Porta HTTP, inteiro entre 1 e 65535                  |
+| `HOST`         | não         | `localhost`                                                         | Interface de bind. Use `0.0.0.0` dentro de container |
+| `NODE_ENV`     | não         | `production`                                                        | `development`, `test` ou `production`                |
+| `LOG_LEVEL`    | não         | `info`                                                              | `debug`, `info`, `warn` ou `error`                   |
+| `CORS_ORIGINS` | não         | `http://localhost:3000,http://localhost:3002,http://localhost:5173` | Lista separada por vírgula. Valor vazio usa o padrão |
 
 Observações:
 
 - **`NODE_ENV` sem valor vira `production`.** Em desenvolvimento, defina `NODE_ENV=development` no `.env`, como já está no exemplo. Com `NODE_ENV=test`, o logger HTTP do Fastify fica desligado para não poluir a saída dos testes.
-- As variáveis `POSTGRES_*` e `JWT_SECRET` do `.env.example` são para o docker-compose e a autenticação, que ainda estão no [Roadmap](#roadmap). Hoje o código não as lê.
+- **`PORT` só aceita um inteiro entre 1 e 65535.** Valores como `abc`, `99999`, `3.5`, `-1` ou vazio encerram a inicialização na validação, e não depois, no `listen`. Vazio é rejeitado porque viraria `0`, e o sistema operacional escolheria uma porta aleatória.
 
 ---
 
@@ -99,7 +97,7 @@ Observações:
 | Script                         | O que faz                                                 |
 | ------------------------------ | --------------------------------------------------------- |
 | `pnpm start:dev`               | Sobe a API com `tsx watch` (recarrega ao salvar)          |
-| `pnpm build`                   | `prisma generate` e bundle ESM com tsup em `dist/`        |
+| `pnpm build`                   | Bundle ESM com tsup em `dist/`                            |
 | `pnpm start`                   | Roda o bundle com source maps habilitados                 |
 | `pnpm type:check`              | `tsc --noEmit`                                            |
 | `pnpm lint` / `lint:fix`       | ESLint com **zero warnings tolerados** / com autocorreção |
@@ -144,7 +142,9 @@ Cada decisão abaixo traz o motivo e o custo que aceitei com ela.
 - **Type-safety de ponta a ponta.** O client é gerado a partir do schema, e as migrations ficam versionadas junto com o código.
 - **Driver `pg` nativo.** O adapter usa o driver `pg` em vez do query engine binário. Isso dá controle direto sobre o pool de conexões e deixa a aplicação mais leve para empacotar.
 
-**Trade-off:** depende de `prisma generate` antes do build, por isso o script `build` já inclui esse passo (o `type:check` passará a incluir quando o schema existir). Consultas muito específicas, como locks pessimistas para reserva concorrente, podem precisar de SQL bruto.
+**Estado atual:** as dependências estão instaladas, mas o Prisma ainda não está configurado (não há schema). Por isso o `build` e o `type:check` não rodam `prisma generate`, e o `DATABASE_URL` ainda não é exigido no env. Os dois voltam junto com o schema.
+
+**Trade-off:** consultas muito específicas, como locks pessimistas para reserva concorrente, podem precisar de SQL bruto.
 
 ### Validação de ambiente com Zod (fail-fast)
 
@@ -191,7 +191,7 @@ Em um sistema que lida com reservas e pagamentos, prefiro que o compilador recla
 ### pnpm com allowlist de scripts e versões exatas
 
 - **Allowlist de builds** ([pnpm-workspace.yaml](pnpm-workspace.yaml)): só pacotes explicitamente aprovados executam scripts de instalação. Scripts de `postinstall` são um vetor clássico de ataque de supply chain, então qualquer dependência nova que queira rodar código na instalação precisa de aprovação consciente.
-- **`save-exact=true`** ([.npmrc](.npmrc)): novas dependências entram com versão fixa, sem `^`. Os builds ficam reprodutíveis e os upgrades são sempre explícitos e revisáveis, nunca um efeito colateral de um `install`.
+- **`save-exact=true`** ([.npmrc](.npmrc)): novas dependências entram com versão fixa, sem `^`. Os upgrades ficam explícitos e revisáveis, nunca um efeito colateral de um `install`. As dependências atuais ainda têm `^` porque foram adicionadas antes dessa configuração; hoje quem garante a reprodutibilidade é o `pnpm-lock.yaml`.
 
 ---
 
@@ -223,8 +223,8 @@ Os hooks são instalados automaticamente pelo script `prepare` ao rodar `pnpm in
 
 ## Roadmap
 
-- [ ] `docker-compose.yml` com PostgreSQL (as variáveis `POSTGRES_*` do `.env.example` já estão previstas)
-- [ ] Schema do Prisma e primeiras migrations
+- [ ] `docker-compose.yml` com PostgreSQL
+- [ ] Schema do Prisma, primeiras migrations e `DATABASE_URL` validada no env
 - [ ] Error handler global do Fastify mapeando `AppError` para respostas HTTP
 - [ ] CORS usando `CORS_ORIGINS`, que já é validada no env
 - [ ] Autenticação (Cognito / JWT)
