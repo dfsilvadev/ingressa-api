@@ -23,7 +23,7 @@ API de venda de ingressos e check-in em tempo real para eventos. O foco é lidar
 
 | Camada                 | Escolha                                                                  |
 | ---------------------- | ------------------------------------------------------------------------ |
-| Runtime                | Node.js 20+ (ESM)                                                        |
+| Runtime                | Node.js 24+ (ESM)                                                        |
 | Linguagem              | TypeScript 5.9 (modo `strict` e flags extras)                            |
 | HTTP                   | Fastify 5                                                                |
 | Banco                  | PostgreSQL + Prisma 7 com `@prisma/adapter-pg` (planejado)               |
@@ -39,7 +39,7 @@ API de venda de ingressos e check-in em tempo real para eventos. O foco é lidar
 
 ### Pré-requisitos
 
-- **Node.js 20 ou superior.** O `package.json` declara `engines.node >= 20`, o [.nvmrc](.nvmrc) fixa `v20.19.4` e o build tem como alvo `node20`.
+- **Node.js 24 ou superior** (LTS atual). O `package.json` declara `engines.node >= 24`, o [.nvmrc](.nvmrc) aponta para `24` (use `nvm install && nvm use`) e o build tem como alvo `node24`.
 - **pnpm** (de preferência via Corepack: `corepack enable`).
 
 ### Passo a passo
