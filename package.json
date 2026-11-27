@@ -20,11 +20,11 @@
   "main": "index.js",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "start:dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsup",
+    "build": "tsup",
     "start": "node --enable-source-maps dist/server.js",
     "type:check": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
